@@ -717,7 +717,7 @@
       <div class="kpi"><div class="kl">Retention ≥ 90 days</div><div class="kv ${cs.retPct < 100 ? 'c-warn' : ''}">${cs.retPct.toFixed(0)}<small>%</small></div><div class="ks">${cs.retPct < 100 ? [...new Set(cs.cams.filter(c => c.retention < 90).map(c => B.SITE[c.site].short))].join(', ') + ' NVR at ' + Math.min(...cs.cams.map(c => c.retention)) + ' days' : 'All sites compliant'}</div></div>
       <div class="kpi"><div class="kl">Your footage access</div><div class="kv" style="font-size:15px">${role().live === 'none' ? '<span class="c-off">No live</span>' : 'Live ✓'} · ${role().playback === 'none' ? '<span class="c-off">No playback</span>' : 'Playback ✓'}</div><div class="ks">${esc(role().label)}${role().live !== 'all' && role().live !== 'none' ? ' · ' + (isRegional() ? role().live.slice(2) + ' branches' : B.SITE[role().live].short) + ' only' : ''}</div></div>
     </div>`;
-    const grid = `<section class="panel p-grid"><div class="ph"><h3>${icon('cam')}Camera grid</h3><span class="muted" style="font-size:11px">Placeholder images — no real footage</span><span class="sp"></span><span class="ro">${icon('lock')}PTZ &amp; config read-only</span>${upd('cam')}</div>
+    const grid = `<section class="panel p-grid"><div class="ph"><h3>${icon('cam')}Camera grid</h3><span class="muted" style="font-size:11px">Simulated feeds · demo data</span><span class="sp"></span><span class="ro">${icon('lock')}PTZ &amp; config read-only</span>${upd('cam')}</div>
       <div class="camtools"><label class="search">${icon('search')}<input id="camq" type="search" placeholder="Search camera, zone, site or NVR…" value="${esc(S.cam.q)}" autocomplete="off"></label>
       <div class="mini-seg">${[['all', 'All'], ['online', 'Online'], ['offline', 'Offline'], ['rec', 'Recording issue']].map(([k, l]) => `<button data-camst="${k}" class="${S.cam.st === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       <div class="pager" id="pager"></div></div>
@@ -734,22 +734,36 @@
       <div class="pb scroll"><div class="list">${incs.map(i => `<div class="li click" data-cam="${i.cam}" title="Open ${i.cam}"><span class="sev ${i.sev}"></span><div class="t"><b>${esc(i.type)}</b><span>${i.id} · ${esc(B.SITE[i.site].short)} · ${i.cam} · ${ago(i.ago)}</span></div><span class="pill ${i.status}">${i.status}</span></div>`).join('') || '<div class="muted">No incidents in the last 24 h.</div>'}</div></div></section>`;
     return `<div class="grid cctv">${strip}${grid}${offP}${incP}</div>`;
   }
-  const CAM_HUES = [[205, 30], [190, 25], [220, 22], [180, 18], [210, 35], [30, 15]];
+  const incOf = (camId) => { const i = B.INCIDENTS.find(x => x.cam === camId && x.status !== 'resolved'); return i ? i.type.split(' — ')[0].split(' (')[0].toUpperCase() : null; };
   function camTile(c) {
-    const h = CAM_HUES[B.hash(c.id) % CAM_HUES.length]; const lv = canLive(c.site);
-    const style = `--c1:hsl(${h[0]} ${h[1]}% 22%);--c2:hsl(${h[0]} ${h[1]}% 11%);--c3:hsl(${h[0]} ${h[1] - 5}% 17%)`;
-    return `<div class="cam ${c.status}" data-cam="${c.id}" title="${esc(c.id + ' · ' + c.zone + ' · ' + B.SITE[c.site].name)}">
-      <div class="ph-img ${lv ? '' : 'blur'}" style="${style}"></div>
-      ${c.status === 'offline' ? `<div class="bad">VIDEO LOSS<br><span style="font-weight:500;font-size:10px">${ago(c.since)}</span></div>` : lv ? '<div class="phl">CAMERA PLACEHOLDER</div>' : `<div class="phl" style="color:#b8c8de">${icon('rewind')}&nbsp;PLAYBACK</div>`}
-      <div class="ov1"><span>${c.id}</span>${c.status === 'online' ? (c.rec === 'ok' ? '<span class="rec">REC</span>' : '<span style="color:#fbbf24">REC ⚠</span>') : ''}</div>
+    const lv = canLive(c.site); const inc = incOf(c.id);
+    return `<div class="cam ${c.status}${inc ? ' inc' : ''}" data-cam="${c.id}" title="${esc(c.id + ' · ' + c.zone + ' · ' + B.SITE[c.site].name)}">
+      <canvas class="feed ${lv ? '' : 'blur'}" data-feed="${c.id}"></canvas>
+      ${c.status === 'offline' ? `<div class="bad">${icon('cam')}<b>VIDEO LOSS</b><span>${ago(c.since)}</span></div>` : lv ? '' : `<div class="phl">${icon('rewind')}&nbsp;PLAYBACK ONLY</div>`}
+      <div class="ov1"><span class="cid">${c.id}</span>${c.status === 'online' ? (c.rec === 'ok' ? '<span class="rec">REC</span>' : '<span class="recw">REC ⚠</span>') : ''}</div>
       <div class="ov2"><b>${esc(c.zone)}</b><span class="ts"></span></div></div>`;
   }
+  // animate the visible grid tiles (~8 fps, only while the CCTV tab is on screen)
+  let feedLast = 0;
+  function feedLoop(now) {
+    requestAnimationFrame(feedLoop);
+    if (S.tab !== 'cctv' || document.hidden || now - feedLast < 125 || !window.CAMSCENE) return; feedLast = now;
+    const dpr = Math.min(2, window.devicePixelRatio || 1); const t = Date.now();
+    $$('#camgrid canvas[data-feed]').forEach(cv => {
+      const w = Math.min(560, Math.round(cv.clientWidth * dpr)), h = Math.round(w * cv.clientHeight / Math.max(1, cv.clientWidth));
+      if (!w || !h) return; if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+      const c = B.CAMS.find(x => x.id === cv.dataset.feed); if (!c) return;
+      CAMSCENE.paint(cv, c, t, { show: c.status === 'online', incident: incOf(c.id) && 'ALERT' });
+    });
+  }
+  requestAnimationFrame(feedLoop);
   function layoutCams() {
     const box = $('#camgrid'); if (!box) return;
     const list = camFiltered(); const w = box.clientWidth; const h = box.parentElement.clientHeight;
-    const cols = Math.max(2, Math.round(w / 210)); const tw = (w - (cols - 1) * 8) / cols, th = Math.round(tw * 0.58);
+    const cols = Math.max(2, Math.round(w / 210)); const tw = (w - (cols - 1) * 8) / cols; let th = Math.round(tw * 0.58);
     const fit = getComputedStyle(document.body).overflow === 'hidden';
-    const rows = fit ? Math.max(1, Math.floor((h + 8) / (th + 8))) : 3;
+    const rows = fit ? Math.max(1, Math.round((h + 8) / (th + 8))) : 3;
+    if (fit) th = Math.max(60, Math.floor((h - (rows - 1) * 8) / rows)); // stretch rows to fill the panel
     const per = cols * rows; S.cam.per = per; const pages = Math.max(1, Math.ceil(list.length / per));
     S.cam.page = Math.min(S.cam.page, pages - 1);
     box.style.gridTemplateColumns = `repeat(${cols}, minmax(0,1fr))`; box.style.gridAutoRows = th + 'px'; box.style.height = fit ? '100%' : 'auto';
@@ -809,7 +823,7 @@
   }
 
   // ======================================================================
-  // Camera viewer: live view + playback (placeholders, role-gated, logged)
+  // Camera viewer: live view + playback (simulated feeds, role-gated, logged)
   // ======================================================================
   const V = { cam: null, mode: 'live', playing: false, speed: 1, t: 0, raf: 0, last: 0 };
   function logAccess(cam, mode, ok) { S.log.unshift({ at: new Date(), role: role().label, cam: cam.id, mode, ok }); S.log = S.log.slice(0, 30); }
@@ -834,8 +848,8 @@
       <div class="ph" style="margin-bottom:10px"><h3>${icon('cam')}${c.id} · ${esc(c.zone)}</h3><span class="muted">${esc(s.name)}</span><span class="sp"></span>
         <div class="mini-seg">${canLive(c.site) ? `<button data-vmode="live" class="${V.mode === 'live' ? 'on' : ''}">${icon('eye')} Live view</button>` : ''}${canPlay(c.site) ? `<button data-vmode="playback" class="${V.mode === 'playback' ? 'on' : ''}">${icon('rewind')} Playback</button>` : ''}</div>
         <button class="x" data-close>${icon('x')}</button></div>
-      <div class="viewer"><canvas id="vcan" width="960" height="540"></canvas>
-        <div class="vo"><span id="vts"></span><span>${V.mode === 'live' ? '<span style="color:#ff5a5a">● LIVE</span>' : '<span style="color:#7dd3fc">▶ PLAYBACK</span>'} · SAMPLE PLACEHOLDER</span></div>
+      <div class="viewer"><canvas id="vcan" width="1280" height="720"></canvas>
+        <div class="vo"><span id="vts"></span><span>${V.mode === 'live' ? '<span style="color:#ff5a5a">● LIVE</span>' : '<span style="color:#7dd3fc">▶ PLAYBACK</span>'} · SIMULATED FEED</span></div>
         ${c.status === 'offline' && V.mode === 'live' ? `<div class="vlock"><div><b style="color:#ff8a8a">VIDEO LOSS</b><br>${esc(c.note)} · ${ago(c.since)}</div></div>` : ''}
         ${!ok ? `<div class="vlock"><div>${icon('lock')}<br><b>Footage restricted</b><br><span style="font-size:12px">${esc(why)}</span><br><span style="font-size:11px;opacity:.7">This attempt was recorded in the access log.</span></div></div>` : ''}
       </div>
@@ -876,34 +890,8 @@
     const hd = $('#tlhead'); if (hd) hd.style.left = Math.max(0, Math.min(100, (t - dayStart()) / DAY * 100)) + '%';
     V.raf = requestAnimationFrame(frame);
   }
-  // Synthetic scene: perspective room, moving figures, sensor noise. Clearly a placeholder.
-  function paintCam(cv, c, t, show) {
-    const x = cv.getContext('2d'), W = cv.width, H = cv.height; const h = CAM_HUES[B.hash(c.id) % CAM_HUES.length];
-    const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, `hsl(${h[0]} ${h[1]}% 20%)`); g.addColorStop(0.55, `hsl(${h[0]} ${h[1]}% 10%)`); g.addColorStop(1, `hsl(${h[0]} ${h[1]}% 6%)`);
-    x.fillStyle = g; x.fillRect(0, 0, W, H);
-    const vx = W * (0.4 + (B.hash(c.id) % 20) / 100), vy = H * 0.38;
-    x.strokeStyle = 'rgba(150,190,240,.12)'; x.lineWidth = 1;
-    x.strokeRect(vx - W * 0.22, vy - H * 0.2, W * 0.44, H * 0.34);
-    for (let i = -6; i <= 6; i++) { x.beginPath(); x.moveTo(vx + i * W * 0.037, vy + H * 0.14); x.lineTo(vx + i * W * 0.2, H); x.stroke(); }
-    for (let k = 1; k < 7; k++) { const yy = vy + H * 0.14 + (H - vy - H * 0.14) * Math.pow(k / 7, 1.6); x.beginPath(); x.moveTo(0, yy); x.lineTo(W, yy); x.stroke(); }
-    [[vx - W * 0.22, vy - H * 0.2, 0, 0], [vx + W * 0.22, vy - H * 0.2, W, 0], [vx - W * 0.22, vy + H * 0.14, 0, H], [vx + W * 0.22, vy + H * 0.14, W, H]].forEach(([a, b, c2, d]) => { x.beginPath(); x.moveTo(a, b); x.lineTo(c2, d); x.stroke(); });
-    if (show) {
-      const r = B.rng('fig' + c.id); const nFig = 1 + Math.floor(r() * 3);
-      for (let i = 0; i < nFig; i++) {
-        const per = 14000 + r() * 16000, ph = r() * per, depth = 0.45 + r() * 0.5;
-        const u = ((t + ph) % per) / per; const dir = r() > 0.5 ? 1 : -1; const px = dir > 0 ? u * (W + 80) - 40 : W + 40 - u * (W + 80);
-        const py = vy + H * 0.14 + (H - vy - H * 0.14) * depth; const sz = 30 + depth * 70; const bob = Math.sin(t / 160 + i) * 2;
-        x.fillStyle = 'rgba(10,16,26,.85)'; x.beginPath(); x.ellipse(px, py - sz * 0.05, sz * 0.25, sz * 0.06, 0, 0, Math.PI * 2); x.fill();
-        x.fillStyle = `rgba(${170 + i * 20},${180 + i * 10},200,.55)`;
-        x.beginPath(); x.roundRect ? x.roundRect(px - sz * 0.16, py - sz * 0.95 + bob, sz * 0.32, sz * 0.62, 8) : x.rect(px - sz * 0.16, py - sz * 0.95 + bob, sz * 0.32, sz * 0.62); x.fill();
-        x.beginPath(); x.arc(px, py - sz * 1.08 + bob, sz * 0.12, 0, Math.PI * 2); x.fill();
-        x.fillRect(px - sz * 0.13, py - sz * 0.36 + bob, sz * 0.1, sz * 0.32); x.fillRect(px + sz * 0.03, py - sz * 0.36 - bob, sz * 0.1, sz * 0.32);
-      }
-    }
-    for (let i = 0; i < 350; i++) { x.fillStyle = `rgba(255,255,255,${Math.random() * 0.07})`; x.fillRect(Math.random() * W, Math.random() * H, 2, 2); }
-    x.fillStyle = 'rgba(210,225,245,.22)'; x.font = '600 18px Inter, Segoe UI, sans-serif'; x.textAlign = 'center';
-    x.fillText('CAMERA PLACEHOLDER — SAMPLE DATA, NOT REAL FOOTAGE', W / 2, H - 22);
-  }
+  // Simulated bank CCTV scene (js/camscene.js) with VMS analytics boxes in the theme accent.
+  function paintCam(cv, c, t, show) { if (window.CAMSCENE) CAMSCENE.paint(cv, c, t, { show, analytics: show, incident: incOf(c.id) }); }
 
   // ======================================================================
   // Events
