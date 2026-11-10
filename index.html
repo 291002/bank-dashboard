@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css?v=20261110n">
+</head>
+<body class="theme-dark">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M3 9.5 12 4l9 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-build" viewBox="0 0 24 24"><path d="M4 21V5l8-2v18M12 8l8 3v10M7 8h2M7 12h2M7 16h2M15 13h2M15 17h2M2 21h20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 9.5 12 4l9 5.5M5 10v7M9.5 10v7M14.5 10v7M19 10v7M3 20h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M3 7h12v10H3zM15 10.5l6-3.5v10l-6-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-snow" viewBox="0 0 24 24"><path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9 4l3 2 3-2M9 20l3-2 3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-batt" viewBox="0 0 24 24"><rect x="2" y="7" width="17" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M22 10v4M9 9l-2 3h4l-2 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8a7 7 0 0 0 7 7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s7 7.5 7 12a7 7 0 0 1-14 0c0-4.5 7-12 7-12z" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-go" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"/></symbol>
+  <symbol id="i-half" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-rewind" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8v4l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="mark"><svg><use href="#i-logo"/></svg></span><div><b>Bank Command Center</b><small>Command center · 18 branches across Egypt</small></div></div>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+    <div class="top-r">
+      <span class="sample" title="All figures, sites and camera images are generated demo data">SAMPLE DATA</span>
+      <span class="clock" id="clock"></span>
+      <div class="themes" role="group" aria-label="Theme">
+        <button data-theme="dark" title="Dark"><svg><use href="#i-moon"/></svg></button>
+        <button data-theme="hybrid" title="Hybrid"><svg><use href="#i-half"/></svg></button>
+        <button data-theme="light" title="Light"><svg><use href="#i-sun"/></svg></button>
+      </div>
+    </div>
+  </header>
+  <div class="filters">
+    <label class="fld"><span>Site</span><select id="fSite"></select></label>
+    <div class="seg" id="fRange"></div>
+    <label class="fld"><span>As of</span><input type="date" id="fDate"></label>
+    <label class="fld role"><span><svg><use href="#i-shield"/></svg>Role</span><select id="fRole"></select></label>
+    <label class="fld" id="fScopeW" hidden><span>Branch</span><select id="fScope"></select></label>
+    <div class="fresh" id="fresh"></div>
+  </div>
+  <main id="main"></main>
+</div>
+
+<div id="scrim"></div>
+<aside id="drawer" aria-hidden="true"><div class="dr-in" id="drawerIn"></div></aside>
+<div id="modal" aria-hidden="true"><div class="md-in" id="modalIn"></div></div>
+
+<div id="intro" role="dialog" aria-label="Bank Command Center intro">
+  <video id="introVid" src="assets/intro.mp4" autoplay muted loop playsinline preload="auto"></video>
+  <div class="in-shade"></div>
+  <div class="in-c">
+    <span class="in-mark"><svg><use href="#i-logo"/></svg></span>
+    <h1>Bank Command Center</h1>
+    <p>Branch network · Buildings · Security — 18 branches across Egypt</p>
+    <button id="introGo" class="in-go" autofocus>Enter dashboard <svg><use href="#i-go"/></svg></button>
+    <span class="in-note">Sample data · camera placeholders · read-only controls</span>
+  </div>
+</div>
+<script src="js/data.js?v=20261110n"></script>
+<script src="js/charts.js?v=20261110n"></script>
+<script src="js/app.js?v=20261110n"></script>
+<script src="js/intro.js?v=20261110n"></script>
+</body>
+</html>
