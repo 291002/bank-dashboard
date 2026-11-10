@@ -717,7 +717,7 @@
       <div class="kpi"><div class="kl">Retention ≥ 90 days</div><div class="kv ${cs.retPct < 100 ? 'c-warn' : ''}">${cs.retPct.toFixed(0)}<small>%</small></div><div class="ks">${cs.retPct < 100 ? [...new Set(cs.cams.filter(c => c.retention < 90).map(c => B.SITE[c.site].short))].join(', ') + ' NVR at ' + Math.min(...cs.cams.map(c => c.retention)) + ' days' : 'All sites compliant'}</div></div>
       <div class="kpi"><div class="kl">Your footage access</div><div class="kv" style="font-size:15px">${role().live === 'none' ? '<span class="c-off">No live</span>' : 'Live ✓'} · ${role().playback === 'none' ? '<span class="c-off">No playback</span>' : 'Playback ✓'}</div><div class="ks">${esc(role().label)}${role().live !== 'all' && role().live !== 'none' ? ' · ' + (isRegional() ? role().live.slice(2) + ' branches' : B.SITE[role().live].short) + ' only' : ''}</div></div>
     </div>`;
-    const grid = `<section class="panel p-grid"><div class="ph"><h3>${icon('cam')}Camera grid</h3><span class="muted" style="font-size:11px">Simulated feeds · demo data</span><span class="sp"></span><span class="ro">${icon('lock')}PTZ &amp; config read-only</span>${upd('cam')}</div>
+    const grid = `<section class="panel p-grid"><div class="ph"><h3>${icon('cam')}Camera grid</h3><span class="muted" style="font-size:11px">Demo photos · not live footage</span><span class="sp"></span><span class="ro">${icon('lock')}PTZ &amp; config read-only</span>${upd('cam')}</div>
       <div class="camtools"><label class="search">${icon('search')}<input id="camq" type="search" placeholder="Search camera, zone, site or NVR…" value="${esc(S.cam.q)}" autocomplete="off"></label>
       <div class="mini-seg">${[['all', 'All'], ['online', 'Online'], ['offline', 'Offline'], ['rec', 'Recording issue']].map(([k, l]) => `<button data-camst="${k}" class="${S.cam.st === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       <div class="pager" id="pager"></div></div>
@@ -734,29 +734,29 @@
       <div class="pb scroll"><div class="list">${incs.map(i => `<div class="li click" data-cam="${i.cam}" title="Open ${i.cam}"><span class="sev ${i.sev}"></span><div class="t"><b>${esc(i.type)}</b><span>${i.id} · ${esc(B.SITE[i.site].short)} · ${i.cam} · ${ago(i.ago)}</span></div><span class="pill ${i.status}">${i.status}</span></div>`).join('') || '<div class="muted">No incidents in the last 24 h.</div>'}</div></div></section>`;
     return `<div class="grid cctv">${strip}${grid}${offP}${incP}</div>`;
   }
-  const incOf = (camId) => { const i = B.INCIDENTS.find(x => x.cam === camId && x.status !== 'resolved'); return i ? i.type.split(' — ')[0].split(' (')[0].toUpperCase() : null; };
+  // Still photos per zone type: assets/cctv/<kind>.jpg (hall, teller, atm, vault, corridor, servers, garage, outdoor, entrance, office). A missing file falls back to the closest photo.
+  const camKind = (zone) => { const z = zone.toLowerCase();
+    if (/atm/.test(z)) return 'atm'; if (/teller|cash centre/.test(z)) return 'teller'; if (/vault/.test(z)) return /corridor/.test(z) ? 'corridor' : 'vault';
+    if (/data hall|cage|server|ups/.test(z)) return 'servers'; if (/parking b|loading dock/.test(z)) return 'garage';
+    if (/parking|perimeter|fence|yard|fuel|gatehouse|loading bay/.test(z)) return 'outdoor'; if (/entrance|exit|mantrap/.test(z)) return 'entrance';
+    if (/back office|executive|treasury|noc/.test(z)) return 'office'; if (/stair|corridor/.test(z)) return 'corridor'; return 'hall'; };
+  const CAM_FALLBACK = { vault: 'corridor', servers: 'corridor', garage: 'corridor', outdoor: 'atm', entrance: 'atm', office: 'hall' };
+  function camPhoto(c) {
+    const k = camKind(c.zone); const fb = CAM_FALLBACK[k] || 'hall';
+    const h = B.hash(c.id); const flip = h % 2 ? -1 : 1, z = 1.04 + (h >> 3) % 12 / 100, px = 30 + (h >> 7) % 40, py = 35 + (h >> 11) % 30;
+    const hr = new Date().getHours(); const ir = (k === 'outdoor' || k === 'garage') && (hr < 6 || hr >= 18);
+    return { src: `assets/cctv/${k}.jpg`, fb: `assets/cctv/${fb}.jpg`, style: `object-position:${px}% ${py}%;transform:scale(${flip * z},${z})`, ir };
+  }
+  const incOf = (camId) => { const i = B.INCIDENTS.find(x => x.cam === camId && x.status !== 'resolved'); return i ? i.type.split(' — ')[0].split(' (')[0] : null; };
   function camTile(c) {
-    const lv = canLive(c.site); const inc = incOf(c.id);
+    const lv = canLive(c.site); const inc = incOf(c.id); const ph = camPhoto(c);
     return `<div class="cam ${c.status}${inc ? ' inc' : ''}" data-cam="${c.id}" title="${esc(c.id + ' · ' + c.zone + ' · ' + B.SITE[c.site].name)}">
-      <canvas class="feed ${lv ? '' : 'blur'}" data-feed="${c.id}"></canvas>
+      ${c.status === 'online' ? `<img class="feed ${lv ? '' : 'blur'} ${ph.ir ? 'ir' : ''}" src="${ph.src}" onerror="this.onerror=null;this.src='${ph.fb}'" style="${ph.style}" alt="" loading="lazy" decoding="async">` : ''}
       ${c.status === 'offline' ? `<div class="bad">${icon('cam')}<b>VIDEO LOSS</b><span>${ago(c.since)}</span></div>` : lv ? '' : `<div class="phl">${icon('rewind')}&nbsp;PLAYBACK ONLY</div>`}
+      ${inc && c.status === 'online' ? `<div class="incb">● ${esc(inc.toUpperCase())}</div>` : ''}
       <div class="ov1"><span class="cid">${c.id}</span>${c.status === 'online' ? (c.rec === 'ok' ? '<span class="rec">REC</span>' : '<span class="recw">REC ⚠</span>') : ''}</div>
       <div class="ov2"><b>${esc(c.zone)}</b><span class="ts"></span></div></div>`;
   }
-  // animate the visible grid tiles (~8 fps, only while the CCTV tab is on screen)
-  let feedLast = 0;
-  function feedLoop(now) {
-    requestAnimationFrame(feedLoop);
-    if (S.tab !== 'cctv' || document.hidden || now - feedLast < 125 || !window.CAMSCENE) return; feedLast = now;
-    const dpr = Math.min(2, window.devicePixelRatio || 1); const t = Date.now();
-    $$('#camgrid canvas[data-feed]').forEach(cv => {
-      const w = Math.min(560, Math.round(cv.clientWidth * dpr)), h = Math.round(w * cv.clientHeight / Math.max(1, cv.clientWidth));
-      if (!w || !h) return; if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-      const c = B.CAMS.find(x => x.id === cv.dataset.feed); if (!c) return;
-      CAMSCENE.paint(cv, c, t, { show: c.status === 'online', incident: incOf(c.id) && 'ALERT' });
-    });
-  }
-  requestAnimationFrame(feedLoop);
   function layoutCams() {
     const box = $('#camgrid'); if (!box) return;
     const list = camFiltered(); const w = box.clientWidth; const h = box.parentElement.clientHeight;
@@ -823,7 +823,7 @@
   }
 
   // ======================================================================
-  // Camera viewer: live view + playback (simulated feeds, role-gated, logged)
+  // Camera viewer: live view + playback (demo photos, role-gated, logged)
   // ======================================================================
   const V = { cam: null, mode: 'live', playing: false, speed: 1, t: 0, raf: 0, last: 0 };
   function logAccess(cam, mode, ok) { S.log.unshift({ at: new Date(), role: role().label, cam: cam.id, mode, ok }); S.log = S.log.slice(0, 30); }
@@ -848,8 +848,8 @@
       <div class="ph" style="margin-bottom:10px"><h3>${icon('cam')}${c.id} · ${esc(c.zone)}</h3><span class="muted">${esc(s.name)}</span><span class="sp"></span>
         <div class="mini-seg">${canLive(c.site) ? `<button data-vmode="live" class="${V.mode === 'live' ? 'on' : ''}">${icon('eye')} Live view</button>` : ''}${canPlay(c.site) ? `<button data-vmode="playback" class="${V.mode === 'playback' ? 'on' : ''}">${icon('rewind')} Playback</button>` : ''}</div>
         <button class="x" data-close>${icon('x')}</button></div>
-      <div class="viewer"><canvas id="vcan" width="1280" height="720"></canvas>
-        <div class="vo"><span id="vts"></span><span>${V.mode === 'live' ? '<span style="color:#ff5a5a">● LIVE</span>' : '<span style="color:#7dd3fc">▶ PLAYBACK</span>'} · SIMULATED FEED</span></div>
+      <div class="viewer">${(() => { const ph = camPhoto(c); return ok && !(c.status === 'offline' && V.mode === 'live') ? `<img class="feed ${ph.ir ? 'ir' : ''}" src="${ph.src}" onerror="this.onerror=null;this.src='${ph.fb}'" style="${ph.style}" alt="">` : '<div class="nofeed"></div>'; })()}${incOf(c.id) && ok ? `<div class="incb big">● ${esc(incOf(c.id).toUpperCase())}</div>` : ''}
+        <div class="vo"><span id="vts"></span><span>${V.mode === 'live' ? '<span style="color:#ff5a5a">● LIVE</span>' : '<span style="color:#7dd3fc">▶ PLAYBACK</span>'} · DEMO PHOTO</span></div>
         ${c.status === 'offline' && V.mode === 'live' ? `<div class="vlock"><div><b style="color:#ff8a8a">VIDEO LOSS</b><br>${esc(c.note)} · ${ago(c.since)}</div></div>` : ''}
         ${!ok ? `<div class="vlock"><div>${icon('lock')}<br><b>Footage restricted</b><br><span style="font-size:12px">${esc(why)}</span><br><span style="font-size:11px;opacity:.7">This attempt was recorded in the access log.</span></div></div>` : ''}
       </div>
@@ -885,14 +885,10 @@
     const dt = now - V.last; V.last = now;
     if (V.mode === 'playback' && V.playing && allowed()) { V.t += dt * V.speed; const lim = isLive() ? Date.now() : dayStart() + DAY; if (V.t >= lim) { V.t = lim; if (!isLive()) V.playing = false; } }
     const t = V.mode === 'live' ? Date.now() : V.t;
-    const cv = $('#vcan'); if (cv) paintCam(cv, V.cam, t, allowed() && !(V.cam.status === 'offline' && V.mode === 'live'));
     const ts = $('#vts'); if (ts) ts.textContent = stamp(new Date(t)) + (V.mode === 'playback' ? ` · ${V.speed}×` : '');
     const hd = $('#tlhead'); if (hd) hd.style.left = Math.max(0, Math.min(100, (t - dayStart()) / DAY * 100)) + '%';
     V.raf = requestAnimationFrame(frame);
   }
-  // Simulated bank CCTV scene (js/camscene.js) with VMS analytics boxes in the theme accent.
-  function paintCam(cv, c, t, show) { if (window.CAMSCENE) CAMSCENE.paint(cv, c, t, { show, analytics: show, incident: incOf(c.id) }); }
-
   // ======================================================================
   // Events
   // ======================================================================

@@ -238,8 +238,14 @@ table.tb { width: 100%; border-collapse: collapse; font-size: 12px; }
   linear-gradient(170deg, var(--c1, #1b2c45) 0%, var(--c2, #0c1626) 58%, var(--c3, #172234) 58.2%, #0a121f 100%); }
 .ph-img::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .025) 0 1px, transparent 1px 3px); }
 .ph-img.blur { filter: blur(6px) saturate(.4); transform: scale(1.1); }
-.cam canvas.feed { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.cam canvas.feed.blur { filter: blur(7px) saturate(.5); transform: scale(1.12); }
+.feed { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; filter: saturate(.82) contrast(1.06) brightness(1.04); }
+.cam .feed.blur { filter: blur(7px) saturate(.5); }
+.feed.ir { filter: grayscale(1) contrast(1.25) brightness(.85); }
+.cam .incb { position: absolute; left: 6px; top: 26px; z-index: 2; font-size: 9px; font-weight: 700; letter-spacing: .4px; color: #fff; background: rgba(239, 68, 68, .88); padding: 2px 6px; border-radius: 5px; max-width: calc(100% - 12px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viewer .incb.big { position: absolute; left: 10px; top: 34px; font-size: 12px; font-weight: 700; color: #fff; background: rgba(239, 68, 68, .88); padding: 3px 9px; border-radius: 6px; z-index: 2; }
+.viewer .nofeed { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .03) 0 1px, transparent 1px 3px), #05080d; }
+.viewer::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .45)), repeating-linear-gradient(0deg, rgba(255, 255, 255, .025) 0 1px, transparent 1px 3px); }
+.viewer .vo, .viewer .vlock { z-index: 3; }
 .cam::before { content: ''; position: absolute; inset: 0 0 auto; height: 34%; background: linear-gradient(180deg, rgba(4, 10, 22, .6), transparent); pointer-events: none; z-index: 1; }
 .cam::after { content: ''; position: absolute; inset: auto 0 0; height: 34%; background: linear-gradient(0deg, rgba(4, 10, 22, .7), transparent); pointer-events: none; z-index: 1; }
 .cam { transition: border-color .2s, box-shadow .2s, transform .2s; }
